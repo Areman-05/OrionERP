@@ -1,0 +1,15 @@
+/vendor/
+/node_modules/
+.env
+.htaccess.local
+/public/uploads/*
+!/public/uploads/.gitkeep
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
