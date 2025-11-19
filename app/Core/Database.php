@@ -73,5 +73,20 @@ class Database
     {
         return $this->connection->lastInsertId();
     }
+
+    public function beginTransaction(): bool
+    {
+        return $this->connection->beginTransaction();
+    }
+
+    public function commit(): bool
+    {
+        return $this->connection->commit();
+    }
+
+    public function rollback(): bool
+    {
+        return $this->connection->rollBack();
+    }
 }
 
