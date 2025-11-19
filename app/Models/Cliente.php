@@ -65,5 +65,11 @@ class Cliente
 
         return true;
     }
+
+    public function delete(int $id): bool
+    {
+        $this->db->query("UPDATE clientes SET estado = 'inactivo' WHERE id = ?", [$id]);
+        return true;
+    }
 }
 
