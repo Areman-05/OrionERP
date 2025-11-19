@@ -69,5 +69,11 @@ class Producto
 
         return true;
     }
+
+    public function delete(int $id): bool
+    {
+        $this->db->query("UPDATE productos SET activo = 0 WHERE id = ?", [$id]);
+        return true;
+    }
 }
 
