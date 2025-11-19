@@ -48,5 +48,22 @@ class Cliente
 
         return (int) $this->db->lastInsertId();
     }
+
+    public function update(int $id, array $data): bool
+    {
+        $sql = "UPDATE clientes SET nombre = ?, email = ?, telefono = ?, direccion = ?, ciudad = ?, estado = ? WHERE id = ?";
+        
+        $this->db->query($sql, [
+            $data['nombre'],
+            $data['email'] ?? null,
+            $data['telefono'] ?? null,
+            $data['direccion'] ?? null,
+            $data['ciudad'] ?? null,
+            $data['estado'] ?? 'activo',
+            $id
+        ]);
+
+        return true;
+    }
 }
 
