@@ -53,5 +53,21 @@ class Producto
 
         return (int) $this->db->lastInsertId();
     }
+
+    public function update(int $id, array $data): bool
+    {
+        $sql = "UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, stock_actual = ?, activo = ? WHERE id = ?";
+        
+        $this->db->query($sql, [
+            $data['nombre'],
+            $data['descripcion'] ?? null,
+            $data['precio_venta'] ?? 0,
+            $data['stock_actual'] ?? 0,
+            $data['activo'] ?? 1,
+            $id
+        ]);
+
+        return true;
+    }
 }
 
