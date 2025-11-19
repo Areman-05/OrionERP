@@ -28,5 +28,21 @@ class LogService
             $ipAddress ?? $_SERVER['REMOTE_ADDR'] ?? null
         ]);
     }
+
+    public function getLogsByUsuario(int $usuarioId, int $limit = 50): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM logs WHERE usuario_id = ? ORDER BY created_at DESC LIMIT ?",
+            [$usuarioId, $limit]
+        );
+    }
+
+    public function getLogsByTabla(string $tabla, int $limit = 50): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM logs WHERE tabla = ? ORDER BY created_at DESC LIMIT ?",
+            [$tabla, $limit]
+        );
+    }
 }
 
