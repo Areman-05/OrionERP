@@ -61,5 +61,10 @@ class AuthController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    private function validateEmail(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
 }
 
