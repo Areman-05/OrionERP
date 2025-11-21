@@ -94,5 +94,28 @@ class ProductoController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function destroy(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        
+        $producto = $this->productoModel->findById($id);
+        if (!$producto) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Producto no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $this->productoModel->delete($id);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Producto eliminado exitosamente'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 
