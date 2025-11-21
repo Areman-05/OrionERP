@@ -101,5 +101,13 @@ class Usuario
     {
         return password_verify($password, $hash);
     }
+
+    public function delete(int $id): bool
+    {
+        return $this->db->execute(
+            "UPDATE usuarios SET activo = 0 WHERE id = ?",
+            [$id]
+        );
+    }
 }
 
