@@ -47,5 +47,28 @@ class ProductoController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function store(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        
+        if (empty($data['nombre']) || empty($data['codigo'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Nombre y codigo son requeridos'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $id = $this->productoModel->create($data);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Producto creado exitosamente',
+            'id' => $id
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+    }
 }
 
