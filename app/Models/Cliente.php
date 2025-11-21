@@ -71,5 +71,13 @@ class Cliente
         $this->db->query("UPDATE clientes SET estado = 'inactivo' WHERE id = ?", [$id]);
         return true;
     }
+
+    public function findByCodigo(string $codigo): ?array
+    {
+        return $this->db->fetchOne(
+            "SELECT * FROM clientes WHERE codigo = ?",
+            [$codigo]
+        );
+    }
 }
 
