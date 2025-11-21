@@ -23,5 +23,15 @@ class Validator
     {
         return strlen($value) <= $max;
     }
+
+    public static function numeric($value): bool
+    {
+        return is_numeric($value);
+    }
+
+    public static function integer($value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_INT) !== false;
+    }
 }
 
