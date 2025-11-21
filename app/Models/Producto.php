@@ -75,5 +75,16 @@ class Producto
         $this->db->query("UPDATE productos SET activo = 0 WHERE id = ?", [$id]);
         return true;
     }
+
+    public function findByCodigo(string $codigo): ?array
+    {
+        return $this->db->fetchOne(
+            "SELECT p.*, c.nombre as categoria_nombre 
+             FROM productos p 
+             LEFT JOIN categorias c ON p.categoria_id = c.id 
+             WHERE p.codigo = ?",
+            [$codigo]
+        );
+    }
 }
 
