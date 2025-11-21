@@ -94,5 +94,28 @@ class ClienteController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function destroy(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        
+        $cliente = $this->clienteModel->findById($id);
+        if (!$cliente) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Cliente no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $this->clienteModel->delete($id);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Cliente eliminado exitosamente'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 
