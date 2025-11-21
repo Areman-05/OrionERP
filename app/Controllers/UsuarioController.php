@@ -47,5 +47,28 @@ class UsuarioController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function store(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        
+        if (empty($data['nombre']) || empty($data['email']) || empty($data['password'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Nombre, email y password son requeridos'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $id = $this->usuarioModel->create($data);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Usuario creado exitosamente',
+            'id' => $id
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+    }
 }
 
