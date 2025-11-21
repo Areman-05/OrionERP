@@ -70,5 +70,29 @@ class ProductoController
         
         return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
     }
+
+    public function update(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $data = $request->getParsedBody();
+        
+        $producto = $this->productoModel->findById($id);
+        if (!$producto) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Producto no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $this->productoModel->update($id, $data);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Producto actualizado exitosamente'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 
