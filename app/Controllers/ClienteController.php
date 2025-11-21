@@ -70,5 +70,29 @@ class ClienteController
         
         return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
     }
+
+    public function update(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $data = $request->getParsedBody();
+        
+        $cliente = $this->clienteModel->findById($id);
+        if (!$cliente) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Cliente no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $this->clienteModel->update($id, $data);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Cliente actualizado exitosamente'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 
