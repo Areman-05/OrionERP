@@ -278,6 +278,24 @@ CREATE TABLE IF NOT EXISTS `logs` (
   FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de histórico de cambios de productos
+CREATE TABLE IF NOT EXISTS `historico_productos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `producto_id` int(11) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `campo` varchar(50) NOT NULL,
+  `valor_anterior` text,
+  `valor_nuevo` text,
+  `motivo` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_producto` (`producto_id`),
+  KEY `idx_usuario` (`usuario_id`),
+  KEY `idx_fecha` (`created_at`),
+  FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabla de notificaciones
 CREATE TABLE IF NOT EXISTS `notificaciones` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

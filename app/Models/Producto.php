@@ -3,6 +3,7 @@
 namespace OrionERP\Models;
 
 use OrionERP\Core\Database;
+use OrionERP\Models\HistoricoProducto;
 
 class Producto
 {
@@ -54,8 +55,13 @@ class Producto
         return (int) $this->db->lastInsertId();
     }
 
-    public function update(int $id, array $data): bool
+    public function update(int $id, array $data, ?int $usuarioId = null): bool
     {
+        $productoAnterior = $this->findById($id);
+        if (!$productoAnterior) {
+            return false;
+        }
+
         $sql = "UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, stock_actual = ?, activo = ? WHERE id = ?";
         
         $this->db->query($sql, [
@@ -66,6 +72,19 @@ class Producto
             $data['activo'] ?? 1,
             $id
         ]);
+
+        // Registrar cambios en histórico
+        $historico = new HistoricoProducto();
+        $campos = ['nombre', 'descripcion', 'precio_venta', 'stock_actual', 'activo'];
+        
+        foreach ($campos as $campo) {
+            $valorAnterior = $productoAnterior[$campo] ?? null;
+            $valorNuevo = $data[$campo] ?? $productoAnterior[$campo] ?? null;
+            
+            if ($valorAnterior != $valorNuevo) {
+                $historico->registrarCambio($id, $campo, $valorAnterior, $valorNuevo, $usuarioId);
+            }
+        }
 
         return true;
     }
