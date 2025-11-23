@@ -277,6 +277,25 @@ CREATE TABLE IF NOT EXISTS `facturas` (
   FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de líneas de factura
+CREATE TABLE IF NOT EXISTS `lineas_factura` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `factura_id` int(11) NOT NULL,
+  `producto_id` int(11) DEFAULT NULL,
+  `descripcion` varchar(255) NOT NULL,
+  `cantidad` decimal(10,2) NOT NULL DEFAULT 1.00,
+  `precio_unitario` decimal(10,2) NOT NULL,
+  `descuento` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `impuesto` decimal(5,2) NOT NULL DEFAULT 21.00,
+  `total` decimal(10,2) NOT NULL,
+  `orden` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_factura` (`factura_id`),
+  KEY `idx_producto` (`producto_id`),
+  FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabla de logs/auditoría
 CREATE TABLE IF NOT EXISTS `logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
