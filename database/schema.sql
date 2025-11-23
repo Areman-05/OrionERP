@@ -234,6 +234,48 @@ CREATE TABLE IF NOT EXISTS `notificaciones` (
   FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de pedidos de compra
+CREATE TABLE IF NOT EXISTS `pedidos_compra` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `numero_pedido` varchar(50) NOT NULL UNIQUE,
+  `proveedor_id` int(11) NOT NULL,
+  `fecha` date NOT NULL,
+  `fecha_entrega_esperada` date DEFAULT NULL,
+  `estado` enum('pendiente','recibido','parcial','completado','cancelado') NOT NULL DEFAULT 'pendiente',
+  `subtotal` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `descuento` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `impuestos` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `total` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `archivo_factura` varchar(255) DEFAULT NULL,
+  `notas` text,
+  `usuario_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_numero` (`numero_pedido`),
+  KEY `idx_proveedor` (`proveedor_id`),
+  KEY `idx_estado` (`estado`),
+  FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`) ON DELETE RESTRICT,
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de líneas de pedido de compra
+CREATE TABLE IF NOT EXISTS `lineas_pedido_compra` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `pedido_id` int(11) NOT NULL,
+  `producto_id` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `cantidad_recibida` int(11) NOT NULL DEFAULT 0,
+  `precio_unitario` decimal(10,2) NOT NULL,
+  `descuento` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `total` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_pedido` (`pedido_id`),
+  KEY `idx_producto` (`producto_id`),
+  FOREIGN KEY (`pedido_id`) REFERENCES `pedidos_compra` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Insertar usuario administrador por defecto
 -- Password: admin123 (hash bcrypt)
 INSERT INTO `usuarios` (`nombre`, `email`, `password`, `rol`, `activo`) VALUES
