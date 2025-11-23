@@ -4,16 +4,27 @@ Sistema ERP completo y modular para pequeñas y medianas empresas desarrollado e
 
 ## 🎯 Características Principales
 
-- ✅ Autenticación y gestión de roles
-- ✅ Dashboard con KPIs y estadísticas
-- ✅ Gestión completa de productos
-- ✅ Control de stock e inventario
-- ✅ Gestión de clientes y proveedores
-- ✅ Módulo de ventas y compras
-- ✅ Facturación con generación de PDF
-- ✅ Sistema de notificaciones
-- ✅ Logs y auditoría
-- ✅ API REST interna
+- ✅ Autenticación y gestión de roles con permisos por módulo
+- ✅ Dashboard con KPIs y estadísticas avanzadas
+- ✅ Gestión completa de productos con variantes (talla, color)
+- ✅ Control de stock e inventario con alertas automáticas
+- ✅ Gestión de clientes y proveedores con documentos
+- ✅ Módulo de ventas y compras completo
+- ✅ Facturación con generación de PDF y líneas detalladas
+- ✅ Sistema de notificaciones mejorado con alertas automáticas
+- ✅ Logs y auditoría completa
+- ✅ API REST interna con autenticación JWT
+- ✅ Buscador avanzado de productos y clientes
+- ✅ Exportación CSV de datos
+- ✅ Sistema de backup de base de datos
+- ✅ Histórico de cambios de productos
+- ✅ Rotación de productos
+- ✅ Seguimiento de entregas de proveedores
+- ✅ Sistema de configuración de empresa
+- ✅ Informes avanzados (ventas, gastos, stock)
+- ✅ Categorías de productos con estructura de árbol
+- ✅ Validaciones mejoradas en formularios
+- ✅ Sistema de cache para consultas frecuentes
 
 ## 🚀 Requisitos
 
@@ -34,21 +45,60 @@ Sistema ERP completo y modular para pequeñas y medianas empresas desarrollado e
 
 ```
 /app
-    /controllers
-    /models
-    /views
-    /services
-    /middleware
+    /Controllers      - Controladores de la aplicación
+    /Models          - Modelos de datos
+    /Services        - Servicios de negocio
+    /Middleware      - Middleware de autenticación y permisos
+    /Core            - Núcleo de la aplicación
+    /Utils           - Utilidades y helpers
 /public
-    /css
-    /js
-    /uploads
-/config
+    /css            - Estilos CSS
+    /js             - JavaScript
+    /uploads        - Archivos subidos
 /database
-/resources
-/routes
-/vendor
+    schema.sql      - Esquema de base de datos
+/backups           - Backups de base de datos
+/cache             - Cache de consultas
+/vendor            - Dependencias de Composer
 ```
+
+## 🔧 Módulos Implementados
+
+### Gestión de Productos
+- CRUD completo de productos
+- Variantes de productos (talla, color, etc.)
+- Categorías con estructura jerárquica
+- Histórico de cambios
+- Control de stock con alertas
+
+### Ventas y Compras
+- Pedidos de venta y compra
+- Líneas de pedido detalladas
+- Facturación con PDF
+- Seguimiento de entregas
+- Recepción de pedidos con actualización automática de stock
+
+### Clientes y Proveedores
+- Gestión completa de clientes y proveedores
+- Documentos asociados
+- Estados y clasificaciones
+- Histórico de pedidos
+
+### Estadísticas e Informes
+- Dashboard con KPIs
+- Gráficas de ventas por mes
+- Productos más vendidos
+- Cálculo de beneficios
+- Informes de ventas, gastos y stock
+- Rotación de productos
+
+### Sistema y Configuración
+- Autenticación JWT para API
+- Permisos por módulo
+- Configuración de empresa
+- Sistema de backup
+- Cache de consultas
+- Logs y auditoría
 
 ## 🔐 Usuario por defecto
 
