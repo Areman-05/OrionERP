@@ -397,6 +397,7 @@ CREATE TABLE IF NOT EXISTS `pedidos_compra` (
   `proveedor_id` int(11) NOT NULL,
   `fecha` date NOT NULL,
   `fecha_entrega_esperada` date DEFAULT NULL,
+  `fecha_entrega_real` date DEFAULT NULL,
   `estado` enum('pendiente','recibido','parcial','completado','cancelado') NOT NULL DEFAULT 'pendiente',
   `subtotal` decimal(10,2) NOT NULL DEFAULT 0.00,
   `descuento` decimal(10,2) NOT NULL DEFAULT 0.00,
@@ -413,6 +414,22 @@ CREATE TABLE IF NOT EXISTS `pedidos_compra` (
   KEY `idx_estado` (`estado`),
   FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`) ON DELETE RESTRICT,
   FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de seguimiento de entregas
+CREATE TABLE IF NOT EXISTS `seguimiento_entregas` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `pedido_compra_id` int(11) NOT NULL,
+  `estado` enum('enviado','en_transito','recibido','retrasado') NOT NULL DEFAULT 'enviado',
+  `fecha` datetime NOT NULL,
+  `ubicacion` varchar(255) DEFAULT NULL,
+  `notas` text,
+  `usuario_id` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_pedido` (`pedido_compra_id`),
+  FOREIGN KEY (`pedido_compra_id`) REFERENCES `pedidos_compra` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla de líneas de pedido de compra
