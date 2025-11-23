@@ -25,6 +25,47 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   KEY `idx_rol` (`rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de permisos por módulo
+CREATE TABLE IF NOT EXISTS `permisos_modulo` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `rol` enum('admin','gerente','empleado') NOT NULL,
+  `modulo` varchar(50) NOT NULL,
+  `permiso` enum('ver','crear','editar','eliminar') NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_rol_modulo_permiso` (`rol`, `modulo`, `permiso`),
+  KEY `idx_rol` (`rol`),
+  KEY `idx_modulo` (`modulo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar permisos por defecto
+INSERT INTO `permisos_modulo` (`rol`, `modulo`, `permiso`, `activo`) VALUES
+('admin', 'productos', 'ver', 1),
+('admin', 'productos', 'crear', 1),
+('admin', 'productos', 'editar', 1),
+('admin', 'productos', 'eliminar', 1),
+('admin', 'clientes', 'ver', 1),
+('admin', 'clientes', 'crear', 1),
+('admin', 'clientes', 'editar', 1),
+('admin', 'clientes', 'eliminar', 1),
+('admin', 'ventas', 'ver', 1),
+('admin', 'ventas', 'crear', 1),
+('admin', 'ventas', 'editar', 1),
+('admin', 'ventas', 'eliminar', 1),
+('gerente', 'productos', 'ver', 1),
+('gerente', 'productos', 'crear', 1),
+('gerente', 'productos', 'editar', 1),
+('gerente', 'clientes', 'ver', 1),
+('gerente', 'clientes', 'crear', 1),
+('gerente', 'clientes', 'editar', 1),
+('gerente', 'ventas', 'ver', 1),
+('gerente', 'ventas', 'crear', 1),
+('gerente', 'ventas', 'editar', 1),
+('empleado', 'productos', 'ver', 1),
+('empleado', 'clientes', 'ver', 1),
+('empleado', 'ventas', 'ver', 1),
+('empleado', 'ventas', 'crear', 1);
+
 -- Tabla de sesiones (auditoría)
 CREATE TABLE IF NOT EXISTS `sesiones` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
