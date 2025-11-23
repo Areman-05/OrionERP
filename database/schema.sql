@@ -177,6 +177,24 @@ CREATE TABLE IF NOT EXISTS `clientes` (
   KEY `idx_estado` (`estado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de documentos de clientes
+CREATE TABLE IF NOT EXISTS `documentos_cliente` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `cliente_id` int(11) NOT NULL,
+  `tipo` enum('DNI','CIF','Contrato','Factura','Otro') NOT NULL DEFAULT 'Otro',
+  `nombre` varchar(255) NOT NULL,
+  `archivo` varchar(255) NOT NULL,
+  `descripcion` text,
+  `fecha_documento` date DEFAULT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_cliente` (`cliente_id`),
+  KEY `idx_tipo` (`tipo`),
+  FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabla de proveedores
 CREATE TABLE IF NOT EXISTS `proveedores` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
