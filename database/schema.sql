@@ -391,6 +391,28 @@ CREATE TABLE IF NOT EXISTS `lineas_pedido_compra` (
   FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de configuración de empresa
+CREATE TABLE IF NOT EXISTS `configuracion_empresa` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `clave` varchar(100) NOT NULL UNIQUE,
+  `valor` text,
+  `tipo` enum('texto','numero','booleano','json') NOT NULL DEFAULT 'texto',
+  `descripcion` varchar(255) DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_clave` (`clave`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar configuración por defecto
+INSERT INTO `configuracion_empresa` (`clave`, `valor`, `tipo`, `descripcion`) VALUES
+('nombre_empresa', 'OrionERP', 'texto', 'Nombre de la empresa'),
+('cif', '', 'texto', 'CIF de la empresa'),
+('direccion', '', 'texto', 'Dirección de la empresa'),
+('telefono', '', 'texto', 'Teléfono de contacto'),
+('email', '', 'texto', 'Email de contacto'),
+('iva_por_defecto', '21', 'numero', 'IVA por defecto en porcentaje'),
+('moneda', 'EUR', 'texto', 'Moneda por defecto');
+
 -- Insertar usuario administrador por defecto
 -- Password: admin123 (hash bcrypt)
 INSERT INTO `usuarios` (`nombre`, `email`, `password`, `rol`, `activo`) VALUES
