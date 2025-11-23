@@ -1,15 +1,39 @@
+# Dependencias
 /vendor/
 /node_modules/
+
+# Archivos de entorno
 .env
-.htaccess.local
+.env.local
+.env.*.local
+
+# Cache
+/cache/*
+!/cache/.gitkeep
+
+# Backups
+/backups/*
+!/backups/.gitkeep
+
+# Logs
+*.log
+/logs/*
+
+# Archivos subidos
 /public/uploads/*
 !/public/uploads/.gitkeep
-*.log
-.DS_Store
-Thumbs.db
+
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.temp
