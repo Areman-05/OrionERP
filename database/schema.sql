@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `productos` (
   `stock_actual` int(11) NOT NULL DEFAULT 0,
   `stock_minimo` int(11) NOT NULL DEFAULT 0,
   `imagen` varchar(255) DEFAULT NULL,
+  `tiene_variantes` tinyint(1) NOT NULL DEFAULT 0,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -75,6 +76,65 @@ CREATE TABLE IF NOT EXISTS `productos` (
   KEY `idx_categoria` (`categoria_id`),
   KEY `idx_activo` (`activo`),
   FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de atributos de productos (talla, color, etc)
+CREATE TABLE IF NOT EXISTS `atributos_producto` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `tipo` enum('texto','numero','opcion') NOT NULL DEFAULT 'texto',
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_nombre` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de valores de atributos
+CREATE TABLE IF NOT EXISTS `valores_atributo` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `atributo_id` int(11) NOT NULL,
+  `valor` varchar(100) NOT NULL,
+  `orden` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_atributo` (`atributo_id`),
+  FOREIGN KEY (`atributo_id`) REFERENCES `atributos_producto` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de variantes de productos
+CREATE TABLE IF NOT EXISTS `variantes_producto` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `producto_id` int(11) NOT NULL,
+  `codigo` varchar(50) NOT NULL,
+  `sku` varchar(50) DEFAULT NULL,
+  `precio_venta` decimal(10,2) DEFAULT NULL,
+  `precio_compra` decimal(10,2) DEFAULT NULL,
+  `stock_actual` int(11) NOT NULL DEFAULT 0,
+  `stock_minimo` int(11) NOT NULL DEFAULT 0,
+  `imagen` varchar(255) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_producto` (`producto_id`),
+  KEY `idx_codigo` (`codigo`),
+  KEY `idx_sku` (`sku`),
+  FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de valores de variantes (relación variante-atributo-valor)
+CREATE TABLE IF NOT EXISTS `variante_atributos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `variante_id` int(11) NOT NULL,
+  `atributo_id` int(11) NOT NULL,
+  `valor_id` int(11) DEFAULT NULL,
+  `valor_texto` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_variante` (`variante_id`),
+  KEY `idx_atributo` (`atributo_id`),
+  KEY `idx_valor` (`valor_id`),
+  FOREIGN KEY (`variante_id`) REFERENCES `variantes_producto` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`atributo_id`) REFERENCES `atributos_producto` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`valor_id`) REFERENCES `valores_atributo` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla de movimientos de stock
