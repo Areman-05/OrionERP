@@ -132,6 +132,65 @@ class PedidoCompra
         );
     }
 
+    public function recibirPedido(int $pedidoId, array $lineasRecibidas, int $usuarioId): bool
+    {
+        $pedido = $this->findById($pedidoId);
+        if (!$pedido) {
+            return false;
+        }
+
+        $productoModel = new Producto();
+        $todasCompletas = true;
+        $algunasRecibidas = false;
+
+        foreach ($lineasRecibidas as $lineaRecibida) {
+            $lineaId = $lineaRecibida['linea_id'];
+            $cantidadRecibida = (int) $lineaRecibida['cantidad_recibida'];
+            
+            if ($cantidadRecibida > 0) {
+                $algunasRecibidas = true;
+                
+                // Actualizar cantidad recibida
+                $linea = $this->db->fetchOne(
+                    "SELECT * FROM lineas_pedido_compra WHERE id = ? AND pedido_id = ?",
+                    [$lineaId, $pedidoId]
+                );
+                
+                if ($linea) {
+                    $nuevaCantidadRecibida = $linea['cantidad_recibida'] + $cantidadRecibida;
+                    $this->db->query(
+                        "UPDATE lineas_pedido_compra SET cantidad_recibida = ? WHERE id = ?",
+                        [$nuevaCantidadRecibida, $lineaId]
+                    );
+
+                    // Actualizar stock del producto
+                    $productoModel->incrementarStock($linea['producto_id'], $cantidadRecibida, 'entrada', "Pedido compra: {$pedido['numero_pedido']}", $usuarioId);
+
+                    // Verificar si la línea está completa
+                    if ($nuevaCantidadRecibida < $linea['cantidad']) {
+                        $todasCompletas = false;
+                    }
+                }
+            }
+        }
+
+        // Actualizar estado del pedido
+        if ($todasCompletas && $algunasRecibidas) {
+            $nuevoEstado = 'completado';
+        } elseif ($algunasRecibidas) {
+            $nuevoEstado = 'parcial';
+        } else {
+            $nuevoEstado = $pedido['estado'];
+        }
+
+        $this->db->query(
+            "UPDATE pedidos_compra SET estado = ? WHERE id = ?",
+            [$nuevoEstado, $pedidoId]
+        );
+
+        return true;
+    }
+
     private function generarNumeroPedido(): string
     {
         $year = date('Y');

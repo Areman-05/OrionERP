@@ -105,5 +105,37 @@ class CompraController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function recibir(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $data = $request->getParsedBody();
+        
+        $pedido = $this->pedidoCompraModel->findById($id);
+        if (!$pedido) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Pedido de compra no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        if (empty($data['lineas']) || empty($data['usuario_id'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Líneas y usuario son requeridos'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $this->pedidoCompraModel->recibirPedido($id, $data['lineas'], $data['usuario_id']);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Pedido recibido y stock actualizado exitosamente'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 

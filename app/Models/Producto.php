@@ -86,5 +86,55 @@ class Producto
             [$codigo]
         );
     }
+
+    public function incrementarStock(int $productoId, int $cantidad, string $tipo, string $motivo, int $usuarioId): bool
+    {
+        $producto = $this->findById($productoId);
+        if (!$producto) {
+            return false;
+        }
+
+        $nuevoStock = $producto['stock_actual'] + $cantidad;
+        
+        // Actualizar stock
+        $this->db->query(
+            "UPDATE productos SET stock_actual = ? WHERE id = ?",
+            [$nuevoStock, $productoId]
+        );
+
+        // Registrar movimiento
+        $this->db->query(
+            "INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, referencia, usuario_id) 
+             VALUES (?, ?, ?, ?, ?, ?)",
+            [$productoId, $tipo, $cantidad, $motivo, null, $usuarioId]
+        );
+
+        return true;
+    }
+
+    public function decrementarStock(int $productoId, int $cantidad, string $tipo, string $motivo, int $usuarioId): bool
+    {
+        $producto = $this->findById($productoId);
+        if (!$producto) {
+            return false;
+        }
+
+        $nuevoStock = max(0, $producto['stock_actual'] - $cantidad);
+        
+        // Actualizar stock
+        $this->db->query(
+            "UPDATE productos SET stock_actual = ? WHERE id = ?",
+            [$nuevoStock, $productoId]
+        );
+
+        // Registrar movimiento
+        $this->db->query(
+            "INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, referencia, usuario_id) 
+             VALUES (?, ?, ?, ?, ?, ?)",
+            [$productoId, $tipo, $cantidad, $motivo, null, $usuarioId]
+        );
+
+        return true;
+    }
 }
 
