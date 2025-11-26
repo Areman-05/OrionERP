@@ -162,6 +162,31 @@ CREATE TABLE IF NOT EXISTS `variantes_producto` (
   FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla de etiquetas
+CREATE TABLE IF NOT EXISTS `etiquetas` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL UNIQUE,
+  `color` varchar(7) DEFAULT '#007bff',
+  `activa` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_nombre` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de relación producto-etiqueta
+CREATE TABLE IF NOT EXISTS `producto_etiquetas` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `producto_id` int(11) NOT NULL,
+  `etiqueta_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_producto_etiqueta` (`producto_id`, `etiqueta_id`),
+  KEY `idx_producto` (`producto_id`),
+  KEY `idx_etiqueta` (`etiqueta_id`),
+  FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`etiqueta_id`) REFERENCES `etiquetas` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabla de valores de variantes (relación variante-atributo-valor)
 CREATE TABLE IF NOT EXISTS `variante_atributos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
