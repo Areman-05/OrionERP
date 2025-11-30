@@ -107,10 +107,7 @@ class PedidoVentaController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
 
-        $this->db->query(
-            "UPDATE pedidos_venta SET estado = ? WHERE id = ?",
-            [$data['estado'], $id]
-        );
+        $this->pedidoModel->update($id, ['estado' => $data['estado']]);
         
         $response->getBody()->write(json_encode([
             'success' => true,

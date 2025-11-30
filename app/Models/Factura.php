@@ -56,6 +56,20 @@ class Factura
         return (int) $this->db->lastInsertId();
     }
 
+    public function update(int $id, array $data): bool
+    {
+        $sql = "UPDATE facturas SET estado = ?, fecha_vencimiento = ?, archivo_pdf = ? WHERE id = ?";
+        
+        $this->db->query($sql, [
+            $data['estado'] ?? null,
+            $data['fecha_vencimiento'] ?? null,
+            $data['archivo_pdf'] ?? null,
+            $id
+        ]);
+
+        return true;
+    }
+
     private function generarNumeroFactura(): string
     {
         $year = date('Y');

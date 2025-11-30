@@ -116,6 +116,19 @@ class PedidoVenta
         );
     }
 
+    public function update(int $id, array $data): bool
+    {
+        $sql = "UPDATE pedidos_venta SET estado = ?, notas = ? WHERE id = ?";
+        
+        $this->db->query($sql, [
+            $data['estado'] ?? null,
+            $data['notas'] ?? null,
+            $id
+        ]);
+
+        return true;
+    }
+
     private function generarNumeroPedido(): string
     {
         $year = date('Y');
