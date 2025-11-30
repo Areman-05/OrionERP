@@ -1,0 +1,123 @@
+<?php
+
+namespace OrionERP\Controllers;
+
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use OrionERP\Models\PedidoVenta;
+use OrionERP\Models\Producto;
+
+class PedidoVentaController
+{
+    private $pedidoModel;
+    private $productoModel;
+
+    public function __construct()
+    {
+        $this->pedidoModel = new PedidoVenta();
+        $this->productoModel = new Producto();
+    }
+
+    public function index(Request $request, Response $response): Response
+    {
+        $pedidos = $this->pedidoModel->getAll();
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $pedidos
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function show(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $pedido = $this->pedidoModel->findById($id);
+        
+        if (!$pedido) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $pedido
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function store(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        
+        if (empty($data['cliente_id']) || empty($data['usuario_id'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Cliente y usuario son requeridos'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $pedidoId = $this->pedidoModel->create($data);
+        
+        // Agregar líneas si existen
+        if (!empty($data['lineas']) && is_array($data['lineas'])) {
+            foreach ($data['lineas'] as $linea) {
+                $this->pedidoModel->agregarLinea($pedidoId, $linea);
+                
+                // Descontar stock
+                if (!empty($linea['producto_id']) && !empty($linea['cantidad'])) {
+                    $this->productoModel->decrementarStock(
+                        $linea['producto_id'],
+                        $linea['cantidad'],
+                        'salida',
+                        "Pedido venta: {$pedidoId}",
+                        $data['usuario_id']
+                    );
+                }
+            }
+            $this->pedidoModel->actualizarTotales($pedidoId);
+        }
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Pedido creado exitosamente',
+            'id' => $pedidoId
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+    }
+
+    public function updateEstado(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $data = $request->getParsedBody();
+        
+        $pedido = $this->pedidoModel->findById($id);
+        if (!$pedido) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $this->db->query(
+            "UPDATE pedidos_venta SET estado = ? WHERE id = ?",
+            [$data['estado'], $id]
+        );
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'message' => 'Estado del pedido actualizado'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+}
+
