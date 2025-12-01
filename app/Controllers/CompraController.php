@@ -5,137 +5,38 @@ namespace OrionERP\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use OrionERP\Models\PedidoCompra;
-use OrionERP\Models\Proveedor;
+use OrionERP\Services\CompraService;
 
 class CompraController
 {
     private $pedidoCompraModel;
-    private $proveedorModel;
+    private $compraService;
 
     public function __construct()
     {
         $this->pedidoCompraModel = new PedidoCompra();
-        $this->proveedorModel = new Proveedor();
+        $this->compraService = new CompraService();
     }
 
-    public function index(Request $request, Response $response): Response
+    public function getResumen(Request $request, Response $response): Response
     {
-        $pedidos = $this->pedidoCompraModel->getAll();
+        $queryParams = $request->getQueryParams();
+        $fechaInicio = $queryParams['fecha_inicio'] ?? date('Y-m-01');
+        $fechaFin = $queryParams['fecha_fin'] ?? date('Y-m-d');
+        
+        $resumen = $this->compraService->getResumenCompras($fechaInicio, $fechaFin);
+        $porProveedor = $this->compraService->getComprasPorProveedor($fechaInicio, $fechaFin);
+        $atrasados = $this->compraService->getPedidosAtrasados();
         
         $response->getBody()->write(json_encode([
             'success' => true,
-            'data' => $pedidos
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    public function show(Request $request, Response $response, array $args): Response
-    {
-        $id = (int) $args['id'];
-        $pedido = $this->pedidoCompraModel->findById($id);
-        
-        if (!$pedido) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Pedido de compra no encontrado'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-        
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'data' => $pedido
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    public function store(Request $request, Response $response): Response
-    {
-        $data = $request->getParsedBody();
-        
-        if (empty($data['proveedor_id']) || empty($data['usuario_id'])) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Proveedor y usuario son requeridos'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $pedidoId = $this->pedidoCompraModel->create($data);
-        
-        // Agregar líneas si existen
-        if (!empty($data['lineas']) && is_array($data['lineas'])) {
-            foreach ($data['lineas'] as $linea) {
-                $this->pedidoCompraModel->agregarLinea($pedidoId, $linea);
-            }
-            $this->pedidoCompraModel->actualizarTotales($pedidoId);
-        }
-        
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'message' => 'Pedido de compra creado exitosamente',
-            'id' => $pedidoId
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
-    }
-
-    public function update(Request $request, Response $response, array $args): Response
-    {
-        $id = (int) $args['id'];
-        $data = $request->getParsedBody();
-        
-        $pedido = $this->pedidoCompraModel->findById($id);
-        if (!$pedido) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Pedido de compra no encontrado'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-
-        $this->pedidoCompraModel->update($id, $data);
-        
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'message' => 'Pedido de compra actualizado exitosamente'
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    public function recibir(Request $request, Response $response, array $args): Response
-    {
-        $id = (int) $args['id'];
-        $data = $request->getParsedBody();
-        
-        $pedido = $this->pedidoCompraModel->findById($id);
-        if (!$pedido) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Pedido de compra no encontrado'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-
-        if (empty($data['lineas']) || empty($data['usuario_id'])) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Líneas y usuario son requeridos'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $this->pedidoCompraModel->recibirPedido($id, $data['lineas'], $data['usuario_id']);
-        
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'message' => 'Pedido recibido y stock actualizado exitosamente'
+            'data' => [
+                'resumen' => $resumen,
+                'por_proveedor' => $porProveedor,
+                'pedidos_atrasados' => $atrasados
+            ]
         ]));
         
         return $response->withHeader('Content-Type', 'application/json');
     }
 }
-
