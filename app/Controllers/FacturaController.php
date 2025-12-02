@@ -6,16 +6,19 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use OrionERP\Models\Factura;
 use OrionERP\Services\FacturacionService;
+use OrionERP\Services\FacturaService;
 
 class FacturaController
 {
     private $facturaModel;
     private $facturacionService;
+    private $facturaService;
 
     public function __construct()
     {
         $this->facturaModel = new Factura();
         $this->facturacionService = new FacturacionService();
+        $this->facturaService = new FacturaService();
     }
 
     public function index(Request $request, Response $response): Response
@@ -63,6 +66,30 @@ class FacturaController
         $response->getBody()->write(json_encode([
             'success' => true,
             'message' => 'Factura marcada como pagada'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getPendientes(Request $request, Response $response): Response
+    {
+        $facturas = $this->facturaService->getFacturasPendientes();
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $facturas
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getVencidas(Request $request, Response $response): Response
+    {
+        $facturas = $this->facturaService->getFacturasVencidas();
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $facturas
         ]));
         
         return $response->withHeader('Content-Type', 'application/json');
