@@ -5,14 +5,17 @@ namespace OrionERP\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use OrionERP\Models\Usuario;
+use OrionERP\Services\UsuarioService;
 
 class UsuarioController
 {
     private $usuarioModel;
+    private $usuarioService;
 
     public function __construct()
     {
         $this->usuarioModel = new Usuario();
+        $this->usuarioService = new UsuarioService();
     }
 
     public function index(Request $request, Response $response): Response
@@ -39,6 +42,9 @@ class UsuarioController
             ]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
+
+        $estadisticas = $this->usuarioService->getEstadisticasUsuario($id);
+        $usuario['estadisticas'] = $estadisticas;
         
         $response->getBody()->write(json_encode([
             'success' => true,
@@ -55,20 +61,64 @@ class UsuarioController
         if (empty($data['nombre']) || empty($data['email']) || empty($data['password'])) {
             $response->getBody()->write(json_encode([
                 'success' => false,
-                'message' => 'Nombre, email y password son requeridos'
+                'message' => 'Nombre, email y contraseña son requeridos'
             ]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $id = $this->usuarioModel->create($data);
+        try {
+            $id = $this->usuarioService->crearUsuario($data);
+            
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Usuario creado exitosamente',
+                'id' => $id
+            ]));
+            
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]));
+            
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+    }
+
+    public function cambiarPassword(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        $usuarioId = $request->getAttribute('usuario_id', 0);
         
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'message' => 'Usuario creado exitosamente',
-            'id' => $id
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+        if (empty($data['password_actual']) || empty($data['password_nuevo'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Contraseña actual y nueva son requeridas'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        try {
+            $this->usuarioService->cambiarPassword(
+                $usuarioId,
+                $data['password_actual'],
+                $data['password_nuevo']
+            );
+            
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Contraseña actualizada exitosamente'
+            ]));
+            
+            return $response->withHeader('Content-Type', 'application/json');
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]));
+            
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
     }
 }
-
