@@ -3,7 +3,6 @@
 namespace OrionERP\Services;
 
 use OrionERP\Models\Cliente;
-use OrionERP\Models\PedidoVenta;
 use OrionERP\Core\Database;
 
 class ClienteService
@@ -17,68 +16,48 @@ class ClienteService
         $this->db = Database::getInstance();
     }
 
-    public function getClienteCompleto(int $clienteId): ?array
+    public function getEstadisticasCliente(int $clienteId): array
     {
-        $cliente = $this->clienteModel->findById($clienteId);
-        
-        if (!$cliente) {
-            return null;
-        }
-        
-        $cliente['total_pedidos'] = $this->getTotalPedidos($clienteId);
-        $cliente['total_comprado'] = $this->getTotalComprado($clienteId);
-        $cliente['ultimo_pedido'] = $this->getUltimoPedido($clienteId);
-        
-        return $cliente;
-    }
-
-    public function getTotalPedidos(int $clienteId): int
-    {
-        $result = $this->db->fetchOne(
-            "SELECT COUNT(*) as total FROM pedidos_venta WHERE cliente_id = ? AND estado != 'cancelado'",
+        $pedidos = $this->db->fetchOne(
+            "SELECT COUNT(*) as total FROM pedidos_venta WHERE cliente_id = ?",
             [$clienteId]
         );
-        
-        return (int) ($result['total'] ?? 0);
-    }
 
-    public function getTotalComprado(int $clienteId): float
-    {
-        $result = $this->db->fetchOne(
-            "SELECT SUM(total) as total FROM pedidos_venta WHERE cliente_id = ? AND estado != 'cancelado'",
+        $totalVentas = $this->db->fetchOne(
+            "SELECT SUM(total) as total FROM pedidos_venta 
+             WHERE cliente_id = ? AND estado != 'cancelado'",
             [$clienteId]
         );
-        
-        return (float) ($result['total'] ?? 0);
-    }
 
-    public function getUltimoPedido(int $clienteId): ?array
-    {
-        return $this->db->fetchOne(
-            "SELECT * FROM pedidos_venta WHERE cliente_id = ? ORDER BY fecha DESC LIMIT 1",
-            [$clienteId]
-        );
-    }
-
-    public function actualizarEstadoCliente(int $clienteId): void
-    {
-        $totalComprado = $this->getTotalComprado($clienteId);
-        $facturasVencidas = $this->db->fetchOne(
+        $facturasPendientes = $this->db->fetchOne(
             "SELECT COUNT(*) as total FROM facturas 
-             WHERE cliente_id = ? AND estado = 'vencida'",
+             WHERE cliente_id = ? AND estado = 'pendiente'",
             [$clienteId]
         );
-        
-        $nuevoEstado = 'activo';
-        
-        if ($facturasVencidas['total'] > 0) {
-            $nuevoEstado = 'moroso';
-        } elseif ($totalComprado > 10000) {
-            $nuevoEstado = 'VIP';
-        }
-        
-        $this->clienteModel->update($clienteId, ['estado' => $nuevoEstado]);
+
+        return [
+            'total_pedidos' => (int) ($pedidos['total'] ?? 0),
+            'total_ventas' => (float) ($totalVentas['total'] ?? 0),
+            'facturas_pendientes' => (int) ($facturasPendientes['total'] ?? 0)
+        ];
+    }
+
+    public function getClientesActivos(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM clientes WHERE estado = 'activo' ORDER BY nombre ASC"
+        );
+    }
+
+    public function getClientesMorosos(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT c.*, SUM(f.total) as total_pendiente 
+             FROM clientes c
+             INNER JOIN facturas f ON c.id = f.cliente_id
+             WHERE f.estado = 'pendiente' AND f.fecha_vencimiento < CURDATE()
+             GROUP BY c.id
+             ORDER BY total_pendiente DESC"
+        );
     }
 }
-
-
