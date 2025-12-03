@@ -6,16 +6,19 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use OrionERP\Models\PedidoVenta;
 use OrionERP\Models\Producto;
+use OrionERP\Services\PedidoService;
 
 class PedidoVentaController
 {
     private $pedidoModel;
     private $productoModel;
+    private $pedidoService;
 
     public function __construct()
     {
         $this->pedidoModel = new PedidoVenta();
         $this->productoModel = new Producto();
+        $this->pedidoService = new PedidoService();
     }
 
     public function index(Request $request, Response $response): Response
@@ -112,6 +115,18 @@ class PedidoVentaController
         $response->getBody()->write(json_encode([
             'success' => true,
             'message' => 'Estado del pedido actualizado'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getPendientes(Request $request, Response $response): Response
+    {
+        $pedidos = $this->pedidoService->getPedidosPendientes();
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $pedidos
         ]));
         
         return $response->withHeader('Content-Type', 'application/json');
