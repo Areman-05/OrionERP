@@ -3,72 +3,60 @@
 namespace OrionERP\Services;
 
 use OrionERP\Models\Producto;
-use OrionERP\Models\VarianteProducto;
-use OrionERP\Models\Etiqueta;
+use OrionERP\Core\Database;
 
 class ProductoService
 {
     private $productoModel;
-    private $varianteModel;
-    private $etiquetaModel;
+    private $db;
 
     public function __construct()
     {
         $this->productoModel = new Producto();
-        $this->varianteModel = new VarianteProducto();
-        $this->etiquetaModel = new Etiqueta();
+        $this->db = Database::getInstance();
     }
 
-    public function crearProductoCompleto(array $data): int
+    public function getProductosMasVendidos(int $limit = 10, string $fechaInicio = null, string $fechaFin = null): array
     {
-        $productoId = $this->productoModel->create($data);
-        
-        // Crear variantes si existen
-        if (!empty($data['variantes']) && is_array($data['variantes'])) {
-            foreach ($data['variantes'] as $variante) {
-                $variante['producto_id'] = $productoId;
-                $this->varianteModel->create($variante);
-            }
+        $where = "pv.estado != 'cancelado'";
+        $params = [];
+
+        if ($fechaInicio && $fechaFin) {
+            $where .= " AND pv.fecha BETWEEN ? AND ?";
+            $params = [$fechaInicio, $fechaFin];
         }
-        
-        // Agregar etiquetas si existen
-        if (!empty($data['etiquetas']) && is_array($data['etiquetas'])) {
-            foreach ($data['etiquetas'] as $etiquetaId) {
-                $this->etiquetaModel->agregarAProducto($productoId, $etiquetaId);
-            }
-        }
-        
-        return $productoId;
+
+        return $this->db->fetchAll(
+            "SELECT p.id, p.nombre, p.codigo, SUM(lpv.cantidad) as cantidad_vendida, SUM(lpv.subtotal) as total_ventas
+             FROM productos p
+             INNER JOIN lineas_pedido_venta lpv ON p.id = lpv.producto_id
+             INNER JOIN pedidos_venta pv ON lpv.pedido_id = pv.id
+             WHERE $where
+             GROUP BY p.id, p.nombre, p.codigo
+             ORDER BY cantidad_vendida DESC
+             LIMIT ?",
+            array_merge($params, [$limit])
+        );
     }
 
-    public function getProductoCompleto(int $productoId): ?array
+    public function getProductosStockBajo(): array
     {
-        $producto = $this->productoModel->findById($productoId);
-        
-        if (!$producto) {
-            return null;
-        }
-        
-        $producto['variantes'] = $this->varianteModel->getByProducto($productoId);
-        $producto['etiquetas'] = $this->etiquetaModel->getByProducto($productoId);
-        
-        return $producto;
+        return $this->db->fetchAll(
+            "SELECT * FROM productos 
+             WHERE stock_actual <= stock_minimo AND activo = 1
+             ORDER BY (stock_actual - stock_minimo) ASC"
+        );
     }
 
-    public function buscarProductosAvanzado(array $filtros): array
+    public function buscarProductos(string $termino): array
     {
-        $productos = $this->productoModel->getAll();
-        
-        // Filtrar por etiquetas
-        if (!empty($filtros['etiquetas'])) {
-            $productos = array_filter($productos, function($producto) use ($filtros) {
-                $etiquetas = $this->etiquetaModel->getByProducto($producto['id']);
-                $etiquetasIds = array_column($etiquetas, 'id');
-                return !empty(array_intersect($filtros['etiquetas'], $etiquetasIds));
-            });
-        }
-        
-        return array_values($productos);
+        $termino = "%$termino%";
+        return $this->db->fetchAll(
+            "SELECT * FROM productos 
+             WHERE (nombre LIKE ? OR codigo LIKE ? OR descripcion LIKE ?) AND activo = 1
+             ORDER BY nombre ASC
+             LIMIT 50",
+            [$termino, $termino, $termino]
+        );
     }
 }
-
