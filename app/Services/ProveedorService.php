@@ -3,7 +3,6 @@
 namespace OrionERP\Services;
 
 use OrionERP\Models\Proveedor;
-use OrionERP\Models\PedidoCompra;
 use OrionERP\Core\Database;
 
 class ProveedorService
@@ -17,51 +16,48 @@ class ProveedorService
         $this->db = Database::getInstance();
     }
 
-    public function getProveedorCompleto(int $proveedorId): ?array
+    public function getEstadisticasProveedor(int $proveedorId): array
     {
-        $proveedor = $this->proveedorModel->findById($proveedorId);
-        
-        if (!$proveedor) {
-            return null;
-        }
-        
-        $proveedor['total_pedidos'] = $this->getTotalPedidos($proveedorId);
-        $proveedor['total_comprado'] = $this->getTotalComprado($proveedorId);
-        $proveedor['pedidos_pendientes'] = $this->getPedidosPendientes($proveedorId);
-        
-        return $proveedor;
-    }
-
-    public function getTotalPedidos(int $proveedorId): int
-    {
-        $result = $this->db->fetchOne(
-            "SELECT COUNT(*) as total FROM pedidos_compra WHERE proveedor_id = ? AND estado != 'cancelado'",
+        $pedidos = $this->db->fetchOne(
+            "SELECT COUNT(*) as total FROM pedidos_compra WHERE proveedor_id = ?",
             [$proveedorId]
         );
-        
-        return (int) ($result['total'] ?? 0);
-    }
 
-    public function getTotalComprado(int $proveedorId): float
-    {
-        $result = $this->db->fetchOne(
-            "SELECT SUM(total) as total FROM pedidos_compra WHERE proveedor_id = ? AND estado != 'cancelado'",
+        $totalCompras = $this->db->fetchOne(
+            "SELECT SUM(total) as total FROM pedidos_compra 
+             WHERE proveedor_id = ? AND estado != 'cancelado'",
             [$proveedorId]
         );
-        
-        return (float) ($result['total'] ?? 0);
-    }
 
-    public function getPedidosPendientes(int $proveedorId): int
-    {
-        $result = $this->db->fetchOne(
+        $pedidosPendientes = $this->db->fetchOne(
             "SELECT COUNT(*) as total FROM pedidos_compra 
-             WHERE proveedor_id = ? AND estado IN ('pendiente', 'parcial')",
+             WHERE proveedor_id = ? AND estado IN ('pendiente', 'parcialmente_recibido')",
             [$proveedorId]
         );
-        
-        return (int) ($result['total'] ?? 0);
+
+        return [
+            'total_pedidos' => (int) ($pedidos['total'] ?? 0),
+            'total_compras' => (float) ($totalCompras['total'] ?? 0),
+            'pedidos_pendientes' => (int) ($pedidosPendientes['total'] ?? 0)
+        ];
+    }
+
+    public function getProveedoresActivos(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM proveedores WHERE activo = 1 ORDER BY nombre ASC"
+        );
+    }
+
+    public function getProveedoresConPedidosPendientes(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT DISTINCT p.*, COUNT(pc.id) as pedidos_pendientes
+             FROM proveedores p
+             INNER JOIN pedidos_compra pc ON p.id = pc.proveedor_id
+             WHERE pc.estado IN ('pendiente', 'parcialmente_recibido')
+             GROUP BY p.id
+             ORDER BY pedidos_pendientes DESC"
+        );
     }
 }
-
-
