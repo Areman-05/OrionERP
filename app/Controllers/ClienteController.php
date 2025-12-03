@@ -33,7 +33,7 @@ class ClienteController
     public function show(Request $request, Response $response, array $args): Response
     {
         $id = (int) $args['id'];
-        $cliente = $this->clienteService->getClienteCompleto($id);
+        $cliente = $this->clienteModel->findById($id);
         
         if (!$cliente) {
             $response->getBody()->write(json_encode([
@@ -42,6 +42,9 @@ class ClienteController
             ]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
+
+        $estadisticas = $this->clienteService->getEstadisticasCliente($id);
+        $cliente['estadisticas'] = $estadisticas;
         
         $response->getBody()->write(json_encode([
             'success' => true,
@@ -51,51 +54,13 @@ class ClienteController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function store(Request $request, Response $response): Response
+    public function getMorosos(Request $request, Response $response): Response
     {
-        $data = $request->getParsedBody();
-        
-        if (empty($data['nombre']) || empty($data['codigo'])) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Nombre y codigo son requeridos'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $id = $this->clienteModel->create($data);
+        $clientes = $this->clienteService->getClientesMorosos();
         
         $response->getBody()->write(json_encode([
             'success' => true,
-            'message' => 'Cliente creado exitosamente',
-            'id' => $id
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
-    }
-
-    public function update(Request $request, Response $response, array $args): Response
-    {
-        $id = (int) $args['id'];
-        $data = $request->getParsedBody();
-        
-        $cliente = $this->clienteModel->findById($id);
-        if (!$cliente) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Cliente no encontrado'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-
-        $this->clienteModel->update($id, $data);
-        
-        // Actualizar estado automáticamente
-        $this->clienteService->actualizarEstadoCliente($id);
-        
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'message' => 'Cliente actualizado exitosamente'
+            'data' => $clientes
         ]));
         
         return $response->withHeader('Content-Type', 'application/json');
