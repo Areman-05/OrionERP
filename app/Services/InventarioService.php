@@ -75,5 +75,56 @@ class InventarioService
             'valor_inventario' => $valorInventario
         ];
     }
-}
 
+    public function generarConteoFisico(array $productos): array
+    {
+        $diferencias = [];
+        
+        foreach ($productos as $item) {
+            $producto = $this->db->fetchOne(
+                "SELECT id, nombre, stock_actual FROM productos WHERE id = ?",
+                [$item['producto_id']]
+            );
+            
+            if ($producto) {
+                $diferencia = $item['cantidad_fisica'] - $producto['stock_actual'];
+                if ($diferencia != 0) {
+                    $diferencias[] = [
+                        'producto_id' => $producto['id'],
+                        'producto_nombre' => $producto['nombre'],
+                        'stock_sistema' => $producto['stock_actual'],
+                        'stock_fisico' => $item['cantidad_fisica'],
+                        'diferencia' => $diferencia
+                    ];
+                }
+            }
+        }
+        
+        return $diferencias;
+    }
+
+    public function getRotacionProductos(int $meses = 6): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                p.id,
+                p.nombre,
+                p.codigo,
+                p.stock_actual,
+                COALESCE(SUM(lpv.cantidad), 0) as cantidad_vendida,
+                CASE 
+                    WHEN p.stock_actual > 0 
+                    THEN COALESCE(SUM(lpv.cantidad), 0) / p.stock_actual 
+                    ELSE 0 
+                END as rotacion
+             FROM productos p
+             LEFT JOIN lineas_pedido_venta lpv ON p.id = lpv.producto_id
+             LEFT JOIN pedidos_venta pv ON lpv.pedido_id = pv.id
+             WHERE p.activo = 1 
+             AND (pv.fecha IS NULL OR pv.fecha >= DATE_SUB(CURDATE(), INTERVAL ? MONTH))
+             GROUP BY p.id, p.nombre, p.codigo, p.stock_actual
+             ORDER BY rotacion DESC",
+            [$meses]
+        );
+    }
+}
