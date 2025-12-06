@@ -63,5 +63,58 @@ class StockService
             [$productoId, $limit]
         );
     }
-}
 
+    public function transferirStock(int $productoId, int $cantidad, string $origen, string $destino, int $usuarioId): bool
+    {
+        $producto = $this->productoModel->findById($productoId);
+        if (!$producto || $producto['stock_actual'] < $cantidad) {
+            return false;
+        }
+
+        $this->db->beginTransaction();
+        
+        try {
+            $this->db->query(
+                "UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?",
+                [$cantidad, $productoId]
+            );
+
+            $this->db->query(
+                "INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, referencia, usuario_id) 
+                 VALUES (?, 'salida', ?, ?, ?, ?)",
+                [$productoId, $cantidad, "Transferencia de $origen a $destino", 'transferencia', $usuarioId]
+            );
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
+    }
+
+    public function getHistorialStock(int $productoId, string $fechaInicio = null, string $fechaFin = null): array
+    {
+        $where = "ms.producto_id = ?";
+        $params = [$productoId];
+
+        if ($fechaInicio) {
+            $where .= " AND DATE(ms.created_at) >= ?";
+            $params[] = $fechaInicio;
+        }
+
+        if ($fechaFin) {
+            $where .= " AND DATE(ms.created_at) <= ?";
+            $params[] = $fechaFin;
+        }
+
+        return $this->db->fetchAll(
+            "SELECT ms.*, u.nombre as usuario_nombre 
+             FROM movimientos_stock ms
+             LEFT JOIN usuarios u ON ms.usuario_id = u.id
+             WHERE $where
+             ORDER BY ms.created_at DESC",
+            $params
+        );
+    }
+}
