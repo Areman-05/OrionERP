@@ -94,5 +94,33 @@ class FacturaController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function getEstadisticas(Request $request, Response $response, array $args): Response
+    {
+        $mes = (int) ($args['mes'] ?? date('m'));
+        $ano = (int) ($args['ano'] ?? date('Y'));
+
+        $estadisticas = $this->facturaService->getEstadisticasFacturacion($mes, $ano);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $estadisticas
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getPorCliente(Request $request, Response $response, array $args): Response
+    {
+        $clienteId = (int) $args['cliente_id'];
+        $facturas = $this->facturaService->getFacturasPorCliente($clienteId);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $facturas
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 
