@@ -68,5 +68,58 @@ class FacturaService
         $result = $this->db->fetchOne("SELECT ROW_COUNT() as total");
         return (int) ($result['total'] ?? 0);
     }
-}
 
+    public function generarNumeroFactura(): string
+    {
+        $ano = date('Y');
+        $ultimaFactura = $this->db->fetchOne(
+            "SELECT numero_factura FROM facturas 
+             WHERE numero_factura LIKE ? 
+             ORDER BY id DESC LIMIT 1",
+            ["FAC-$ano-%"]
+        );
+
+        if ($ultimaFactura) {
+            $numero = (int) substr($ultimaFactura['numero_factura'], -4);
+            $numero++;
+        } else {
+            $numero = 1;
+        }
+
+        return sprintf("FAC-%s-%04d", $ano, $numero);
+    }
+
+    public function getFacturasPorCliente(int $clienteId, int $limit = 50): array
+    {
+        return $this->db->fetchAll(
+            "SELECT f.*, 
+             (SELECT COUNT(*) FROM lineas_factura WHERE factura_id = f.id) as total_lineas
+             FROM facturas f
+             WHERE f.cliente_id = ?
+             ORDER BY f.fecha_emision DESC
+             LIMIT ?",
+            [$clienteId, $limit]
+        );
+    }
+
+    public function getEstadisticasFacturacion(int $mes, int $ano): array
+    {
+        $total = $this->db->fetchOne(
+            "SELECT 
+                COUNT(*) as cantidad,
+                SUM(total) as total,
+                SUM(CASE WHEN estado = 'pagada' THEN total ELSE 0 END) as total_pagado,
+                SUM(CASE WHEN estado = 'pendiente' THEN total ELSE 0 END) as total_pendiente
+             FROM facturas
+             WHERE MONTH(fecha_emision) = ? AND YEAR(fecha_emision) = ?",
+            [$mes, $ano]
+        );
+
+        return [
+            'cantidad' => (int) ($total['cantidad'] ?? 0),
+            'total' => (float) ($total['total'] ?? 0),
+            'total_pagado' => (float) ($total['total_pagado'] ?? 0),
+            'total_pendiente' => (float) ($total['total_pendiente'] ?? 0)
+        ];
+    }
+}
