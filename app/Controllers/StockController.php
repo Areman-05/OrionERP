@@ -27,37 +27,36 @@ class StockController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function ajustarStock(Request $request, Response $response): Response
+    public function ajustarStock(Request $request, Response $response, array $args): Response
     {
+        $productoId = (int) $args['id'];
         $data = $request->getParsedBody();
         
-        if (empty($data['producto_id']) || !isset($data['cantidad']) || empty($data['motivo'])) {
-            $response->getBody()->write(json_encode([
-                'success' => false,
-                'message' => 'Producto, cantidad y motivo son requeridos'
-            ]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $usuarioId = $data['usuario_id'] ?? 0;
-        $this->stockService->ajustarStock(
-            $data['producto_id'],
-            $data['cantidad'],
-            $data['motivo'],
-            $usuarioId
+        $resultado = $this->stockService->ajustarStock(
+            $productoId,
+            (int) $data['cantidad'],
+            $data['motivo'] ?? 'Ajuste manual',
+            (int) $data['usuario_id']
         );
         
-        $response->getBody()->write(json_encode([
-            'success' => true,
-            'message' => 'Stock ajustado exitosamente'
-        ]));
+        if ($resultado) {
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Stock ajustado correctamente'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
         
-        return $response->withHeader('Content-Type', 'application/json');
+        $response->getBody()->write(json_encode([
+            'success' => false,
+            'message' => 'Error al ajustar stock'
+        ]));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
     }
 
     public function getMovimientos(Request $request, Response $response, array $args): Response
     {
-        $productoId = (int) $args['producto_id'];
+        $productoId = (int) $args['id'];
         $movimientos = $this->stockService->getMovimientosStock($productoId);
         
         $response->getBody()->write(json_encode([
@@ -67,5 +66,31 @@ class StockController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
-}
 
+    public function transferirStock(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        
+        $resultado = $this->stockService->transferirStock(
+            (int) $data['producto_id'],
+            (int) $data['cantidad'],
+            $data['origen'],
+            $data['destino'],
+            (int) $data['usuario_id']
+        );
+        
+        if ($resultado) {
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Stock transferido correctamente'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+        
+        $response->getBody()->write(json_encode([
+            'success' => false,
+            'message' => 'Error al transferir stock'
+        ]));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+    }
+}
