@@ -5,14 +5,17 @@ namespace OrionERP\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use OrionERP\Models\Categoria;
+use OrionERP\Services\CategoriaService;
 
 class CategoriaController
 {
     private $categoriaModel;
+    private $categoriaService;
 
     public function __construct()
     {
         $this->categoriaModel = new Categoria();
+        $this->categoriaService = new CategoriaService();
     }
 
     public function index(Request $request, Response $response): Response
@@ -102,6 +105,36 @@ class CategoriaController
         $response->getBody()->write(json_encode([
             'success' => true,
             'message' => 'Categoría actualizada exitosamente'
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getEstadisticas(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $estadisticas = $this->categoriaService->getEstadisticasCategoria($id);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $estadisticas
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getMasVendidas(Request $request, Response $response): Response
+    {
+        $queryParams = $request->getQueryParams();
+        $fechaInicio = $queryParams['fecha_inicio'] ?? null;
+        $fechaFin = $queryParams['fecha_fin'] ?? null;
+        $limit = (int) ($queryParams['limit'] ?? 10);
+
+        $categorias = $this->categoriaService->getCategoriasMasVendidas($limit, $fechaInicio, $fechaFin);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $categorias
         ]));
         
         return $response->withHeader('Content-Type', 'application/json');
