@@ -41,4 +41,24 @@ class ExportacionController
             ->withHeader('Content-Type', 'text/csv; charset=utf-8')
             ->withHeader('Content-Disposition', 'attachment; filename="ventas_' . date('Y-m-d') . '.csv"');
     }
+
+    public function exportarProductos(Request $request, Response $response): Response
+    {
+        $csv = $this->exportacionService->exportarProductos();
+        
+        $response->getBody()->write($csv);
+        return $response
+            ->withHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->withHeader('Content-Disposition', 'attachment; filename="productos_' . date('Y-m-d') . '.csv"');
+    }
+
+    public function exportarInventario(Request $request, Response $response): Response
+    {
+        $csv = $this->exportacionService->exportarInventario();
+        
+        $response->getBody()->write($csv);
+        return $response
+            ->withHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->withHeader('Content-Disposition', 'attachment; filename="inventario_' . date('Y-m-d') . '.csv"');
+    }
 }
