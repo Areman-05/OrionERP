@@ -59,4 +59,45 @@ class ProductoService
             [$termino, $termino, $termino]
         );
     }
+
+    public function getProductosPorCategoria(int $categoriaId): array
+    {
+        return $this->db->fetchAll(
+            "SELECT p.*, c.nombre as categoria_nombre 
+             FROM productos p
+             LEFT JOIN categorias c ON p.categoria_id = c.id
+             WHERE p.categoria_id = ? AND p.activo = 1
+             ORDER BY p.nombre ASC"
+        );
+    }
+
+    public function actualizarPreciosMasivos(array $productos, float $porcentaje, string $tipo = 'aumento'): int
+    {
+        $actualizados = 0;
+        $this->db->beginTransaction();
+
+        try {
+            foreach ($productos as $productoId) {
+                $producto = $this->productoModel->findById($productoId);
+                if ($producto) {
+                    $precioActual = (float) $producto['precio_venta'];
+                    $nuevoPrecio = $tipo === 'aumento' 
+                        ? $precioActual * (1 + $porcentaje / 100)
+                        : $precioActual * (1 - $porcentaje / 100);
+
+                    $this->db->query(
+                        "UPDATE productos SET precio_venta = ? WHERE id = ?",
+                        [$nuevoPrecio, $productoId]
+                    );
+                    $actualizados++;
+                }
+            }
+
+            $this->db->commit();
+            return $actualizados;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }
