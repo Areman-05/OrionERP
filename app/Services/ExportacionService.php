@@ -50,6 +50,21 @@ class ExportacionService
         return $this->arrayToCsv($ventas);
     }
 
+    public function exportarInventario(): string
+    {
+        $inventario = $this->db->fetchAll(
+            "SELECT p.codigo, p.nombre, c.nombre as categoria, 
+                    p.stock_actual, p.stock_minimo, 
+                    p.precio_compra, (p.stock_actual * p.precio_compra) as valor_inventario
+             FROM productos p
+             LEFT JOIN categorias c ON p.categoria_id = c.id
+             WHERE p.activo = 1
+             ORDER BY p.nombre"
+        );
+        
+        return $this->arrayToCsv($inventario);
+    }
+
     private function arrayToCsv(array $data): string
     {
         if (empty($data)) {
@@ -73,4 +88,3 @@ class ExportacionService
         return $csv;
     }
 }
-
