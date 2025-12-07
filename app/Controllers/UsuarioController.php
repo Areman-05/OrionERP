@@ -43,8 +43,8 @@ class UsuarioController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
 
-        $estadisticas = $this->usuarioService->getEstadisticasUsuario($id);
-        $usuario['estadisticas'] = $estadisticas;
+        $actividad = $this->usuarioService->getActividadUsuario($id);
+        $usuario['actividad'] = $actividad;
         
         $response->getBody()->write(json_encode([
             'success' => true,
@@ -120,5 +120,21 @@ class UsuarioController
             
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
+    }
+
+    public function getActividad(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) $args['id'];
+        $queryParams = $request->getQueryParams();
+        $dias = (int) ($queryParams['dias'] ?? 30);
+
+        $actividad = $this->usuarioService->getActividadUsuario($id, $dias);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $actividad
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
     }
 }
