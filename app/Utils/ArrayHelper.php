@@ -45,5 +45,56 @@ class ArrayHelper
     {
         return array_filter($array, $callback);
     }
+
+    public static function first(array $array, callable $callback = null)
+    {
+        if ($callback === null) {
+            return reset($array) ?: null;
+        }
+
+        foreach ($array as $item) {
+            if ($callback($item)) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    public static function last(array $array)
+    {
+        return end($array) ?: null;
+    }
+
+    public static function flatten(array $array, int $depth = 1): array
+    {
+        $result = [];
+        foreach ($array as $item) {
+            if (is_array($item) && $depth > 0) {
+                $result = array_merge($result, self::flatten($item, $depth - 1));
+            } else {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
+    public static function unique(array $array, string $key = null): array
+    {
+        if ($key === null) {
+            return array_unique($array, SORT_REGULAR);
+        }
+
+        $seen = [];
+        $result = [];
+        foreach ($array as $item) {
+            $value = is_array($item) ? ($item[$key] ?? null) : null;
+            if ($value !== null && !in_array($value, $seen)) {
+                $seen[] = $value;
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
 }
 
