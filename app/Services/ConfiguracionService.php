@@ -47,6 +47,36 @@ class ConfiguracionService
             'email' => $this->getValor('email', '')
         ];
     }
+
+    public function actualizarConfiguracion(array $configuracion): bool
+    {
+        $exito = true;
+        foreach ($configuracion as $clave => $valor) {
+            if (!$this->setValor($clave, $valor)) {
+                $exito = false;
+            }
+        }
+        return $exito;
+    }
+
+    public function getConfiguracionStock(): array
+    {
+        return [
+            'alerta_stock_bajo' => (bool) $this->getValor('alerta_stock_bajo', true),
+            'stock_minimo_por_defecto' => (int) $this->getValor('stock_minimo_por_defecto', 10),
+            'control_stock_automatico' => (bool) $this->getValor('control_stock_automatico', true)
+        ];
+    }
+
+    public function getConfiguracionGeneral(): array
+    {
+        return [
+            'timezone' => $this->getValor('timezone', 'Europe/Madrid'),
+            'idioma' => $this->getValor('idioma', 'es'),
+            'formato_fecha' => $this->getValor('formato_fecha', 'd/m/Y'),
+            'formato_hora' => $this->getValor('formato_hora', 'H:i:s')
+        ];
+    }
 }
 
 
