@@ -2,24 +2,46 @@
 
 namespace OrionERP\Middleware;
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
 class CorsMiddleware implements MiddlewareInterface
 {
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    private $allowedOrigins;
+    private $allowedMethods;
+    private $allowedHeaders;
+
+    public function __construct(array $allowedOrigins = ['*'], array $allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], array $allowedHeaders = ['Content-Type', 'Authorization'])
     {
+        $this->allowedOrigins = $allowedOrigins;
+        $this->allowedMethods = $allowedMethods;
+        $this->allowedHeaders = $allowedHeaders;
+    }
+
+    public function process(Request $request, RequestHandler $handler): Response
+    {
+        $origin = $request->getHeaderLine('Origin');
+        
         $response = $handler->handle($request);
-        
-        $allowedOrigins = $_ENV['CORS_ALLOWED_ORIGINS'] ?? '*';
-        
-        return $response
-            ->withHeader('Access-Control-Allow-Origin', $allowedOrigins)
-            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
-            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-            ->withHeader('Access-Control-Allow-Credentials', 'true');
+
+        // Handle preflight requests
+        if ($request->getMethod() === 'OPTIONS') {
+            $response = $response->withStatus(204);
+        }
+
+        // Set CORS headers
+        if (in_array('*', $this->allowedOrigins) || in_array($origin, $this->allowedOrigins)) {
+            $response = $response->withHeader('Access-Control-Allow-Origin', $origin ?: '*');
+        }
+
+        $response = $response
+            ->withHeader('Access-Control-Allow-Methods', implode(', ', $this->allowedMethods))
+            ->withHeader('Access-Control-Allow-Headers', implode(', ', $this->allowedHeaders))
+            ->withHeader('Access-Control-Allow-Credentials', 'true')
+            ->withHeader('Access-Control-Max-Age', '86400');
+
+        return $response;
     }
 }
-
