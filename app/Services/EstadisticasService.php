@@ -93,5 +93,77 @@ class EstadisticasService
             'pedidos_pendientes' => $pedidosPendientes['cantidad'] ?? 0
         ];
     }
+
+    public function getVentasPorDia(string $fechaInicio, string $fechaFin): array
+    {
+        return $this->db->fetchAll(
+            "SELECT DATE(fecha) as dia, SUM(total) as total, COUNT(*) as cantidad
+             FROM pedidos_venta
+             WHERE fecha BETWEEN ? AND ? AND estado != 'cancelado'
+             GROUP BY DATE(fecha)
+             ORDER BY dia",
+            [$fechaInicio, $fechaFin]
+        );
+    }
+
+    public function getVentasPorCliente(int $limit = 10, string $fechaInicio = null, string $fechaFin = null): array
+    {
+        $where = "pv.estado != 'cancelado'";
+        $params = [];
+
+        if ($fechaInicio && $fechaFin) {
+            $where .= " AND pv.fecha BETWEEN ? AND ?";
+            $params = [$fechaInicio, $fechaFin];
+        }
+
+        $params[] = $limit;
+
+        return $this->db->fetchAll(
+            "SELECT c.nombre, SUM(pv.total) as total_ventas, COUNT(pv.id) as cantidad_pedidos
+             FROM clientes c
+             INNER JOIN pedidos_venta pv ON c.id = pv.cliente_id
+             WHERE $where
+             GROUP BY c.id, c.nombre
+             ORDER BY total_ventas DESC
+             LIMIT ?",
+            $params
+        );
+    }
+
+    public function getComparacionPeriodos(string $periodoActualInicio, string $periodoActualFin, 
+                                          string $periodoAnteriorInicio, string $periodoAnteriorFin): array
+    {
+        $actual = $this->db->fetchOne(
+            "SELECT SUM(total) as total, COUNT(*) as cantidad
+             FROM pedidos_venta
+             WHERE fecha BETWEEN ? AND ? AND estado != 'cancelado'",
+            [$periodoActualInicio, $periodoActualFin]
+        );
+
+        $anterior = $this->db->fetchOne(
+            "SELECT SUM(total) as total, COUNT(*) as cantidad
+             FROM pedidos_venta
+             WHERE fecha BETWEEN ? AND ? AND estado != 'cancelado'",
+            [$periodoAnteriorInicio, $periodoAnteriorFin]
+        );
+
+        $totalActual = (float) ($actual['total'] ?? 0);
+        $totalAnterior = (float) ($anterior['total'] ?? 0);
+        $variacion = $totalAnterior > 0 
+            ? (($totalActual - $totalAnterior) / $totalAnterior) * 100 
+            : 0;
+
+        return [
+            'periodo_actual' => [
+                'total' => $totalActual,
+                'cantidad' => (int) ($actual['cantidad'] ?? 0)
+            ],
+            'periodo_anterior' => [
+                'total' => $totalAnterior,
+                'cantidad' => (int) ($anterior['cantidad'] ?? 0)
+            ],
+            'variacion_porcentual' => round($variacion, 2)
+        ];
+    }
 }
 
