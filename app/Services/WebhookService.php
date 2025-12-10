@@ -13,12 +13,35 @@ class WebhookService
         $this->db = Database::getInstance();
     }
 
-    public function enviarWebhook(string $evento, array $datos, string $url): bool
+    public function registrarWebhook(string $url, string $evento, array $configuracion = []): int
+    {
+        $this->db->query(
+            "INSERT INTO webhooks (url, evento, configuracion, activo)
+             VALUES (?, ?, ?, 1)",
+            [$url, $evento, json_encode($configuracion)]
+        );
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function ejecutarWebhook(string $evento, array $datos): void
+    {
+        $webhooks = $this->db->fetchAll(
+            "SELECT * FROM webhooks WHERE evento = ? AND activo = 1",
+            [$evento]
+        );
+
+        foreach ($webhooks as $webhook) {
+            $this->enviarWebhook($webhook['url'], $evento, $datos, json_decode($webhook['configuracion'], true));
+        }
+    }
+
+    private function enviarWebhook(string $url, string $evento, array $datos, array $configuracion): void
     {
         $payload = [
             'evento' => $evento,
-            'datos' => $datos,
-            'timestamp' => date('Y-m-d H:i:s')
+            'timestamp' => date('Y-m-d H:i:s'),
+            'datos' => $datos
         ];
 
         $ch = curl_init($url);
@@ -26,29 +49,28 @@ class WebhookService
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'X-Webhook-Signature: ' . $this->generarFirma($payload)
+            'X-Webhook-Signature: ' . hash_hmac('sha256', json_encode($payload), $configuracion['secret'] ?? '')
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_exec($ch);
         curl_close($ch);
-
-        // Registrar webhook
-        $this->db->query(
-            "INSERT INTO logs (accion, tabla, datos_nuevos) 
-             VALUES (?, ?, ?)",
-            ['webhook_enviado', 'webhooks', json_encode(['evento' => $evento, 'url' => $url, 'codigo' => $httpCode])]
-        );
-
-        return $httpCode >= 200 && $httpCode < 300;
     }
 
-    private function generarFirma(array $payload): string
+    public function desactivarWebhook(int $webhookId): bool
     {
-        $secret = $_ENV['WEBHOOK_SECRET'] ?? 'default_secret';
-        return hash_hmac('sha256', json_encode($payload), $secret);
+        return $this->db->query(
+            "UPDATE webhooks SET activo = 0 WHERE id = ?",
+            [$webhookId]
+        );
+    }
+
+    public function getWebhooksPorEvento(string $evento): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM webhooks WHERE evento = ? AND activo = 1",
+            [$evento]
+        );
     }
 }
-
