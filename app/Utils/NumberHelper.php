@@ -45,6 +45,32 @@ class NumberHelper
     {
         return $base * ($iva / 100);
     }
+
+    public static function calcularTotalConIVA(float $base, float $iva = 21): float
+    {
+        return $base + self::calcularIVA($base, $iva);
+    }
+
+    public static function calcularBaseDesdeTotal(float $total, float $iva = 21): float
+    {
+        return $total / (1 + ($iva / 100));
+    }
+
+    public static function formatearPorcentaje(float $porcentaje, int $decimales = 2): string
+    {
+        return number_format($porcentaje, $decimales, ',', '.') . '%';
+    }
+
+    public static function esNumeroPositivo(float $numero): bool
+    {
+        return $numero > 0;
+    }
+
+    public static function formatearCantidad(float $cantidad, string $unidad = ''): string
+    {
+        $formateado = number_format($cantidad, 2, ',', '.');
+        return $unidad ? "{$formateado} {$unidad}" : $formateado;
+    }
 }
 
 
