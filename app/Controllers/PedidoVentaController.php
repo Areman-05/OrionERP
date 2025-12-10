@@ -131,5 +131,37 @@ class PedidoVentaController
         
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function getPorCliente(Request $request, Response $response, array $args): Response
+    {
+        $clienteId = (int) $args['cliente_id'];
+        $queryParams = $request->getQueryParams();
+        $limit = (int) ($queryParams['limit'] ?? 10);
+
+        $pedidos = $this->pedidoService->getPedidosPorCliente($clienteId, $limit);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $pedidos
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getEstadisticas(Request $request, Response $response): Response
+    {
+        $queryParams = $request->getQueryParams();
+        $fechaInicio = $queryParams['fecha_inicio'] ?? date('Y-m-01');
+        $fechaFin = $queryParams['fecha_fin'] ?? date('Y-m-d');
+
+        $estadisticas = $this->pedidoService->calcularEstadisticasPedidos($fechaInicio, $fechaFin);
+        
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'data' => $estadisticas
+        ]));
+        
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
 
