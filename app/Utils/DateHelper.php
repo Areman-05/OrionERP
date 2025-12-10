@@ -50,4 +50,50 @@ class DateHelper
         $date->modify('last day of this month');
         return $date->format('Y-m-d');
     }
+
+    public static function esDiaHabil(string $fecha): bool
+    {
+        $date = new \DateTime($fecha);
+        $diaSemana = (int) $date->format('w');
+        // 0 = domingo, 6 = sábado
+        return $diaSemana > 0 && $diaSemana < 6;
+    }
+
+    public static function getRangoFechas(string $fechaInicio, string $fechaFin): array
+    {
+        $inicio = new \DateTime($fechaInicio);
+        $fin = new \DateTime($fechaFin);
+        $fechas = [];
+
+        while ($inicio <= $fin) {
+            $fechas[] = $inicio->format('Y-m-d');
+            $inicio->modify('+1 day');
+        }
+
+        return $fechas;
+    }
+
+    public static function formatearFechaRelativa(string $fecha): string
+    {
+        $date = new \DateTime($fecha);
+        $ahora = new \DateTime();
+        $diff = $date->diff($ahora);
+
+        if ($diff->days == 0) {
+            return 'Hoy';
+        } elseif ($diff->days == 1) {
+            return 'Ayer';
+        } elseif ($diff->days < 7) {
+            return "Hace {$diff->days} días";
+        } elseif ($diff->days < 30) {
+            $semanas = floor($diff->days / 7);
+            return "Hace {$semanas} " . ($semanas == 1 ? 'semana' : 'semanas');
+        } elseif ($diff->days < 365) {
+            $meses = floor($diff->days / 30);
+            return "Hace {$meses} " . ($meses == 1 ? 'mes' : 'meses');
+        } else {
+            $anos = floor($diff->days / 365);
+            return "Hace {$anos} " . ($anos == 1 ? 'año' : 'años');
+        }
+    }
 }
