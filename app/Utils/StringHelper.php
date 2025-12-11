@@ -50,6 +50,43 @@ class StringHelper
         
         return $usuarioEnmascarado . '@' . $dominio;
     }
+
+    public static function enmascararTelefono(string $telefono): string
+    {
+        $telefono = preg_replace('/[^0-9]/', '', $telefono);
+        if (strlen($telefono) <= 4) {
+            return str_repeat('*', strlen($telefono));
+        }
+        
+        return substr($telefono, 0, 2) . str_repeat('*', strlen($telefono) - 4) . substr($telefono, -2);
+    }
+
+    public static function extraerNumeros(string $texto): string
+    {
+        return preg_replace('/[^0-9]/', '', $texto);
+    }
+
+    public static function formatearNumeroDocumento(string $numero): string
+    {
+        $numero = self::extraerNumeros($numero);
+        if (strlen($numero) == 8) {
+            return substr($numero, 0, 2) . '.' . substr($numero, 2, 3) . '.' . substr($numero, 5, 3);
+        }
+        return $numero;
+    }
+
+    public static function camelCase(string $texto): string
+    {
+        $texto = self::slug($texto);
+        $palabras = explode('-', $texto);
+        $resultado = array_shift($palabras);
+        
+        foreach ($palabras as $palabra) {
+            $resultado .= ucfirst($palabra);
+        }
+        
+        return $resultado;
+    }
 }
 
 
