@@ -100,4 +100,47 @@ class ProductoService
             throw $e;
         }
     }
+
+    public function getProductosPorProveedor(int $proveedorId): array
+    {
+        return $this->db->fetchAll(
+            "SELECT p.*, pr.nombre as proveedor_nombre 
+             FROM productos p
+             LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
+             WHERE p.proveedor_id = ? AND p.activo = 1
+             ORDER BY p.nombre ASC",
+            [$proveedorId]
+        );
+    }
+
+    public function getEstadisticasProducto(int $productoId, string $fechaInicio = null, string $fechaFin = null): array
+    {
+        $where = "lpv.producto_id = ? AND pv.estado != 'cancelado'";
+        $params = [$productoId];
+
+        if ($fechaInicio && $fechaFin) {
+            $where .= " AND pv.fecha BETWEEN ? AND ?";
+            $params[] = $fechaInicio;
+            $params[] = $fechaFin;
+        }
+
+        $estadisticas = $this->db->fetchOne(
+            "SELECT 
+                COUNT(DISTINCT pv.id) as total_pedidos,
+                SUM(lpv.cantidad) as cantidad_vendida,
+                SUM(lpv.subtotal) as total_ventas,
+                AVG(lpv.precio_unitario) as precio_promedio
+             FROM lineas_pedido_venta lpv
+             INNER JOIN pedidos_venta pv ON lpv.pedido_id = pv.id
+             WHERE $where",
+            $params
+        );
+
+        return [
+            'total_pedidos' => (int) ($estadisticas['total_pedidos'] ?? 0),
+            'cantidad_vendida' => (float) ($estadisticas['cantidad_vendida'] ?? 0),
+            'total_ventas' => (float) ($estadisticas['total_ventas'] ?? 0),
+            'precio_promedio' => (float) ($estadisticas['precio_promedio'] ?? 0)
+        ];
+    }
 }
