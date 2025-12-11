@@ -82,5 +82,48 @@ class FacturacionService
         $this->facturaModel->update($facturaId, ['estado' => 'pagada']);
         return true;
     }
+
+    public function getFacturasPendientes(): array
+    {
+        return $this->facturaModel->getAll(['estado' => 'pendiente']);
+    }
+
+    public function getFacturasVencidas(): array
+    {
+        $db = \OrionERP\Core\Database::getInstance();
+        return $db->fetchAll(
+            "SELECT f.*, c.nombre as cliente_nombre, c.email as cliente_email
+             FROM facturas f
+             LEFT JOIN clientes c ON f.cliente_id = c.id
+             WHERE f.estado = 'pendiente' 
+             AND f.fecha_vencimiento < CURDATE()
+             ORDER BY f.fecha_vencimiento ASC"
+        );
+    }
+
+    public function calcularEstadisticasFacturacion(string $fechaInicio, string $fechaFin): array
+    {
+        $db = \OrionERP\Core\Database::getInstance();
+        
+        $estadisticas = $db->fetchOne(
+            "SELECT 
+                COUNT(*) as total_facturas,
+                SUM(CASE WHEN estado = 'pagada' THEN total ELSE 0 END) as total_pagado,
+                SUM(CASE WHEN estado = 'pendiente' THEN total ELSE 0 END) as total_pendiente,
+                SUM(CASE WHEN estado = 'vencida' THEN total ELSE 0 END) as total_vencido,
+                AVG(total) as promedio_factura
+             FROM facturas
+             WHERE fecha_emision BETWEEN ? AND ?",
+            [$fechaInicio, $fechaFin]
+        );
+
+        return [
+            'total_facturas' => (int) ($estadisticas['total_facturas'] ?? 0),
+            'total_pagado' => (float) ($estadisticas['total_pagado'] ?? 0),
+            'total_pendiente' => (float) ($estadisticas['total_pendiente'] ?? 0),
+            'total_vencido' => (float) ($estadisticas['total_vencido'] ?? 0),
+            'promedio_factura' => (float) ($estadisticas['promedio_factura'] ?? 0)
+        ];
+    }
 }
 
