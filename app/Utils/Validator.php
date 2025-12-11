@@ -104,11 +104,79 @@ class Validator
                             $errors[$field][] = "El campo $field debe ser numérico";
                         }
                         break;
+                    case 'integer':
+                        if ($value && !self::integer($value)) {
+                            $errors[$field][] = "El campo $field debe ser un número entero";
+                        }
+                        break;
+                    case 'decimal':
+                        if ($value && !self::decimal($value)) {
+                            $errors[$field][] = "El campo $field debe ser un número decimal";
+                        }
+                        break;
+                    case 'date':
+                        if ($value && !self::date($value, $ruleValue ?? 'Y-m-d')) {
+                            $errors[$field][] = "El campo $field debe ser una fecha válida";
+                        }
+                        break;
                 }
             }
         }
         
         return $errors;
+    }
+
+    public static function sanitizeString(string $value): string
+    {
+        return htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES, 'UTF-8');
+    }
+
+    public static function sanitizeArray(array $data): array
+    {
+        $sanitized = [];
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $sanitized[$key] = self::sanitizeString($value);
+            } elseif (is_array($value)) {
+                $sanitized[$key] = self::sanitizeArray($value);
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+        return $sanitized;
+    }
+
+    public static function validarIBAN(string $iban): bool
+    {
+        $iban = str_replace(' ', '', strtoupper($iban));
+        if (strlen($iban) < 15 || strlen($iban) > 34) {
+            return false;
+        }
+        
+        $iban = substr($iban, 4) . substr($iban, 0, 4);
+        $iban = preg_replace_callback('/[A-Z]/', function($matches) {
+            return ord($matches[0]) - ord('A') + 10;
+        }, $iban);
+        
+        return bcmod($iban, '97') == 1;
+    }
+
+    public static function validarNIF(string $nif): bool
+    {
+        $nif = strtoupper(trim($nif));
+        if (strlen($nif) != 9) {
+            return false;
+        }
+        
+        $letras = 'TRWAGMYFPDXBNJZSQVHLCKE';
+        $numero = substr($nif, 0, 8);
+        $letra = substr($nif, 8, 1);
+        
+        if (!is_numeric($numero)) {
+            return false;
+        }
+        
+        return $letras[$numero % 23] === $letra;
     }
 }
 
