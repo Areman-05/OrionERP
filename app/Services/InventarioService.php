@@ -127,4 +127,52 @@ class InventarioService
             [$meses]
         );
     }
+
+    public function getMovimientosInventario(int $productoId = null, string $fechaInicio = null, string $fechaFin = null): array
+    {
+        $where = "1=1";
+        $params = [];
+
+        if ($productoId) {
+            $where .= " AND ms.producto_id = ?";
+            $params[] = $productoId;
+        }
+
+        if ($fechaInicio && $fechaFin) {
+            $where .= " AND ms.fecha BETWEEN ? AND ?";
+            $params[] = $fechaInicio;
+            $params[] = $fechaFin;
+        }
+
+        return $this->db->fetchAll(
+            "SELECT ms.*, p.nombre as producto_nombre, u.nombre as usuario_nombre
+             FROM movimientos_stock ms
+             LEFT JOIN productos p ON ms.producto_id = p.id
+             LEFT JOIN usuarios u ON ms.usuario_id = u.id
+             WHERE $where
+             ORDER BY ms.fecha DESC, ms.id DESC
+             LIMIT 100",
+            $params
+        );
+    }
+
+    public function calcularValorInventarioPorAlmacen(int $almacenId = null): float
+    {
+        $where = "p.activo = 1";
+        $params = [];
+
+        if ($almacenId) {
+            $where .= " AND p.almacen_id = ?";
+            $params[] = $almacenId;
+        }
+
+        $result = $this->db->fetchOne(
+            "SELECT SUM(p.stock_actual * p.precio_compra) as valor 
+             FROM productos p
+             WHERE $where",
+            $params
+        );
+        
+        return (float) ($result['valor'] ?? 0);
+    }
 }
