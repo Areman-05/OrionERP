@@ -96,4 +96,28 @@ class DateHelper
             return "Hace {$anos} " . ($anos == 1 ? 'año' : 'años');
         }
     }
+
+    public static function getMesesAnio(): array
+    {
+        return [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+        ];
+    }
+
+    public static function getDiasSemana(): array
+    {
+        return [
+            0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles',
+            4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'
+        ];
+    }
+
+    public static function esFinDeSemana(string $fecha): bool
+    {
+        $date = new \DateTime($fecha);
+        $diaSemana = (int) $date->format('w');
+        return $diaSemana == 0 || $diaSemana == 6;
+    }
 }
