@@ -60,4 +60,61 @@ class ClienteService
              ORDER BY total_pendiente DESC"
         );
     }
+
+    public function getHistorialCompras(int $clienteId, int $limit = 10): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                pv.id,
+                pv.numero_pedido,
+                pv.fecha,
+                pv.total,
+                pv.estado,
+                COUNT(lpv.id) as total_items
+             FROM pedidos_venta pv
+             LEFT JOIN lineas_pedido_venta lpv ON pv.id = lpv.pedido_id
+             WHERE pv.cliente_id = ?
+             GROUP BY pv.id, pv.numero_pedido, pv.fecha, pv.total, pv.estado
+             ORDER BY pv.fecha DESC
+             LIMIT ?",
+            [$clienteId, $limit]
+        );
+    }
+
+    public function buscarClientes(string $termino): array
+    {
+        $termino = "%$termino%";
+        return $this->db->fetchAll(
+            "SELECT * FROM clientes 
+             WHERE (nombre LIKE ? OR codigo LIKE ? OR email LIKE ? OR telefono LIKE ?)
+             ORDER BY nombre ASC
+             LIMIT 50",
+            [$termino, $termino, $termino, $termino]
+        );
+    }
+
+    public function getClientesPorSegmento(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                CASE 
+                    WHEN total_compras >= 10000 THEN 'VIP'
+                    WHEN total_compras >= 5000 THEN 'Premium'
+                    WHEN total_compras >= 1000 THEN 'Regular'
+                    ELSE 'Nuevo'
+                END as segmento,
+                COUNT(*) as cantidad,
+                SUM(total_compras) as total_ventas
+             FROM (
+                 SELECT 
+                     c.id,
+                     COALESCE(SUM(pv.total), 0) as total_compras
+                 FROM clientes c
+                 LEFT JOIN pedidos_venta pv ON c.id = pv.cliente_id AND pv.estado != 'cancelado'
+                 GROUP BY c.id
+             ) as segmentos
+             GROUP BY segmento
+             ORDER BY total_ventas DESC"
+        );
+    }
 }
