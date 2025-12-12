@@ -60,4 +60,52 @@ class ProveedorService
              ORDER BY pedidos_pendientes DESC"
         );
     }
+
+    public function getHistorialCompras(int $proveedorId, int $limit = 10): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                pc.id,
+                pc.numero_pedido,
+                pc.fecha,
+                pc.total,
+                pc.estado,
+                COUNT(lpc.id) as total_items
+             FROM pedidos_compra pc
+             LEFT JOIN lineas_pedido_compra lpc ON pc.id = lpc.pedido_id
+             WHERE pc.proveedor_id = ?
+             GROUP BY pc.id, pc.numero_pedido, pc.fecha, pc.total, pc.estado
+             ORDER BY pc.fecha DESC
+             LIMIT ?",
+            [$proveedorId, $limit]
+        );
+    }
+
+    public function buscarProveedores(string $termino): array
+    {
+        $termino = "%$termino%";
+        return $this->db->fetchAll(
+            "SELECT * FROM proveedores 
+             WHERE (nombre LIKE ? OR codigo LIKE ? OR email LIKE ? OR telefono LIKE ?)
+             ORDER BY nombre ASC
+             LIMIT 50",
+            [$termino, $termino, $termino, $termino]
+        );
+    }
+
+    public function getProveedoresPorVolumen(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                p.*,
+                COUNT(pc.id) as total_pedidos,
+                COALESCE(SUM(pc.total), 0) as total_compras,
+                AVG(pc.total) as promedio_pedido
+             FROM proveedores p
+             LEFT JOIN pedidos_compra pc ON p.id = pc.proveedor_id AND pc.estado != 'cancelado'
+             WHERE p.activo = 1
+             GROUP BY p.id
+             ORDER BY total_compras DESC"
+        );
+    }
 }
