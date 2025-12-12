@@ -70,4 +70,56 @@ class CacheService
     {
         return $this->cacheDir . md5($key) . '.cache';
     }
+
+    public function has(string $key): bool
+    {
+        $file = $this->getCacheFile($key);
+        
+        if (!file_exists($file)) {
+            return false;
+        }
+        
+        $data = unserialize(file_get_contents($file));
+        
+        if (time() > $data['expires_at']) {
+            unlink($file);
+            return false;
+        }
+        
+        return true;
+    }
+
+    public function remember(string $key, callable $callback, ?int $ttl = null)
+    {
+        if ($this->has($key)) {
+            return unserialize($this->get($key));
+        }
+        
+        $value = $callback();
+        $this->set($key, serialize($value), $ttl);
+        
+        return $value;
+    }
+
+    public function getStats(): array
+    {
+        $files = glob($this->cacheDir . '*.cache');
+        $totalSize = 0;
+        $expired = 0;
+        
+        foreach ($files as $file) {
+            $totalSize += filesize($file);
+            $data = unserialize(file_get_contents($file));
+            if (time() > $data['expires_at']) {
+                $expired++;
+            }
+        }
+        
+        return [
+            'total_entries' => count($files),
+            'expired_entries' => $expired,
+            'total_size' => $totalSize,
+            'total_size_mb' => round($totalSize / 1024 / 1024, 2)
+        ];
+    }
 }
