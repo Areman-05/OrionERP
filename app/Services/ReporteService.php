@@ -119,4 +119,61 @@ class ReporteService
             'resumen' => $resumen
         ];
     }
+
+    public function generarReporteCompras(string $fechaInicio, string $fechaFin): array
+    {
+        $compras = $this->db->fetchAll(
+            "SELECT 
+                pc.id,
+                pc.numero_pedido,
+                pc.fecha,
+                pr.nombre as proveedor,
+                pc.total,
+                pc.estado
+             FROM pedidos_compra pc
+             LEFT JOIN proveedores pr ON pc.proveedor_id = pr.id
+             WHERE pc.fecha BETWEEN ? AND ?
+             ORDER BY pc.fecha DESC",
+            [$fechaInicio, $fechaFin]
+        );
+
+        $resumen = $this->db->fetchOne(
+            "SELECT 
+                COUNT(*) as total_pedidos,
+                SUM(total) as total_compras,
+                SUM(CASE WHEN estado = 'recibido' THEN total ELSE 0 END) as compras_recibidas,
+                SUM(CASE WHEN estado = 'pendiente' THEN total ELSE 0 END) as compras_pendientes
+             FROM pedidos_compra
+             WHERE fecha BETWEEN ? AND ?",
+            [$fechaInicio, $fechaFin]
+        );
+
+        return [
+            'compras' => $compras,
+            'resumen' => $resumen
+        ];
+    }
+
+    public function generarReporteMargenBeneficio(string $fechaInicio, string $fechaFin): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                p.id,
+                p.nombre,
+                p.codigo,
+                SUM(lpv.cantidad) as cantidad_vendida,
+                AVG(lpv.precio_unitario) as precio_venta_promedio,
+                p.precio_compra,
+                (AVG(lpv.precio_unitario) - p.precio_compra) as margen_unitario,
+                ((AVG(lpv.precio_unitario) - p.precio_compra) * SUM(lpv.cantidad)) as margen_total,
+                ((AVG(lpv.precio_unitario) - p.precio_compra) / AVG(lpv.precio_unitario) * 100) as margen_porcentual
+             FROM productos p
+             INNER JOIN lineas_pedido_venta lpv ON p.id = lpv.producto_id
+             INNER JOIN pedidos_venta pv ON lpv.pedido_id = pv.id
+             WHERE pv.fecha BETWEEN ? AND ? AND pv.estado != 'cancelado'
+             GROUP BY p.id, p.nombre, p.codigo, p.precio_compra
+             ORDER BY margen_total DESC",
+            [$fechaInicio, $fechaFin]
+        );
+    }
 }
