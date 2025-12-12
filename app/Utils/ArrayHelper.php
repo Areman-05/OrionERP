@@ -96,5 +96,30 @@ class ArrayHelper
         }
         return $result;
     }
+
+    public static function sortBy(array $array, string $key, string $direction = 'asc'): array
+    {
+        usort($array, function($a, $b) use ($key, $direction) {
+            $aValue = is_array($a) ? ($a[$key] ?? null) : null;
+            $bValue = is_array($b) ? ($b[$key] ?? null) : null;
+            
+            if ($aValue == $bValue) return 0;
+            
+            $result = $aValue < $bValue ? -1 : 1;
+            return $direction === 'desc' ? -$result : $result;
+        });
+        
+        return $array;
+    }
+
+    public static function chunk(array $array, int $size): array
+    {
+        return array_chunk($array, $size);
+    }
+
+    public static function merge(array ...$arrays): array
+    {
+        return array_merge(...$arrays);
+    }
 }
 
