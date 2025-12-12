@@ -71,6 +71,27 @@ class NumberHelper
         $formateado = number_format($cantidad, 2, ',', '.');
         return $unidad ? "{$formateado} {$unidad}" : $formateado;
     }
+
+    public static function formatearNumeroEntero(int $numero): string
+    {
+        return number_format($numero, 0, ',', '.');
+    }
+
+    public static function convertirStringANumero(string $valor): float
+    {
+        $valor = str_replace(['.', ','], ['', '.'], $valor);
+        return (float) $valor;
+    }
+
+    public static function esPar(int $numero): bool
+    {
+        return $numero % 2 === 0;
+    }
+
+    public static function esImpar(int $numero): bool
+    {
+        return $numero % 2 !== 0;
+    }
 }
 
 
