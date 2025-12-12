@@ -165,5 +165,48 @@ class EstadisticasService
             'variacion_porcentual' => round($variacion, 2)
         ];
     }
+
+    public function getVentasPorVendedor(string $fechaInicio = null, string $fechaFin = null): array
+    {
+        $where = "pv.estado != 'cancelado'";
+        $params = [];
+
+        if ($fechaInicio && $fechaFin) {
+            $where .= " AND pv.fecha BETWEEN ? AND ?";
+            $params = [$fechaInicio, $fechaFin];
+        }
+
+        return $this->db->fetchAll(
+            "SELECT 
+                u.id,
+                u.nombre as vendedor,
+                COUNT(pv.id) as total_pedidos,
+                SUM(pv.total) as total_ventas,
+                AVG(pv.total) as promedio_venta
+             FROM usuarios u
+             INNER JOIN pedidos_venta pv ON u.id = pv.usuario_id
+             WHERE $where
+             GROUP BY u.id, u.nombre
+             ORDER BY total_ventas DESC",
+            $params
+        );
+    }
+
+    public function getTendenciasVentas(int $meses = 6): array
+    {
+        return $this->db->fetchAll(
+            "SELECT 
+                DATE_FORMAT(fecha, '%Y-%m') as periodo,
+                SUM(total) as total_ventas,
+                COUNT(*) as cantidad_pedidos,
+                AVG(total) as ticket_promedio
+             FROM pedidos_venta
+             WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+             AND estado != 'cancelado'
+             GROUP BY DATE_FORMAT(fecha, '%Y-%m')
+             ORDER BY periodo ASC",
+            [$meses]
+        );
+    }
 }
 
